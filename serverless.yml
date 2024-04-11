@@ -1,0 +1,67 @@
+service: aws-softtek
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  lambdaHashingVersion: 20201221
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - "dynamodb:PutItem"
+            - "dynamodb:GetItem"
+            - "dynamodb:DeleteItem"
+            - "dynamodb:Scan"
+          Resource:
+            - {"Fn::GetAtt": ["DatabaseTable", "Arn"]}
+
+functions:
+  getStarWarsData:
+    handler: src/handlers.getStarWarsData
+    events:
+      - http:
+          path: /starwars/{id}
+          method: get
+          cors: true
+  createStarWarsCharacter:
+    handler: src/handlers.createStarWarsCharacter
+    events:
+      - http:
+          path: /starwars
+          method: post
+  getStarWarsCharacters:
+    handler: src/handlers.getStarWarsCharacters
+    events:
+      - http:
+          path: /starwars
+          method: get
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-aws-documentation
+
+custom:
+  documentation:
+    api:
+      info:
+        version: '1.0'
+        title: 'AWS Softtek API'
+    securityDefinitions: {}
+
+resources:
+  Resources:
+    DatabaseTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: DatabaseTable
+        BillingMode: PAY_PER_REQUEST  # Cambiar a capacidad bajo demanda
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
